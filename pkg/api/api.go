@@ -5,6 +5,7 @@ import (
 )
 
 func Init(r *chi.Mux) {
+	r.Use(logger)
 	r.Get("/api/nextdate", nextdateHandler)
 	r.Post("/api/signin", signinHandler)
 

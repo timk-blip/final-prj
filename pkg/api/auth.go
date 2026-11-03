@@ -18,11 +18,11 @@ func signinHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusBadRequest)
 		return
 	}
 	if input.Password != pass {
-		writeError(w, fmt.Errorf("password mismatch"))
+		writeError(w, fmt.Errorf("password mismatch"), http.StatusUnauthorized)
 		return
 	}
 	sum := sha256.Sum256([]byte(input.Password))
@@ -31,7 +31,7 @@ func signinHandler(w http.ResponseWriter, r *http.Request) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(pass))
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 

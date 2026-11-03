@@ -25,6 +25,8 @@ func main() {
 	defer dataBase.Close()
 	fmt.Println("start db -", dbFile)
 	r := chi.NewRouter()
+	api.Init(r)
+
 	fileServer := http.FileServer(http.Dir("web"))
 	r.Handle("/*", fileServer)
 	port := os.Getenv("TODO_PORT")
@@ -32,9 +34,6 @@ func main() {
 		port = "7540"
 	}
 	fmt.Println("сервер запущен: http://127.0.0.1:" + port)
-
-	api.Init(r)
-
 	err = http.ListenAndServe(":"+port, r)
 	if err != nil {
 		panic(err)

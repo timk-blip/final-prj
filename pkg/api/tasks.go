@@ -14,7 +14,7 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	search := r.FormValue("search")
 	tasks, err := db.Tasks(50, search)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

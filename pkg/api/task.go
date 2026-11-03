@@ -12,16 +12,16 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusBadRequest)
 		return
 	}
 	if err := checkTask(&task); err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusBadRequest)
 		return
 	}
 	id, err := db.AddTask(task.Date, task.Title, task.Comment, task.Repeat)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -55,19 +55,20 @@ func checkTask(task *db.Task) error {
 	return nil
 }
 
-func writeError(w http.ResponseWriter, err error) {
+func writeError(w http.ResponseWriter, err error, status int) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 }
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	if id == "" {
-		writeError(w, errors.New("id is empty"))
+		writeError(w, errors.New("id is empty"), http.StatusBadRequest)
 		return
 	}
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -78,19 +79,19 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusBadRequest)
 		return
 	}
 	if task.ID == "" {
-		writeError(w, errors.New("id is empty"))
+		writeError(w, errors.New("id is empty"), http.StatusBadRequest)
 		return
 	}
 	if err := checkTask(&task); err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusBadRequest)
 		return
 	}
 	if err := db.UpdateTask(&task); err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -100,28 +101,28 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	if id == "" {
-		writeError(w, errors.New("id is empty"))
+		writeError(w, errors.New("id is empty"), http.StatusBadRequest)
 		return
 	}
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusNotFound)
 		return
 	}
 	if task.Repeat == "" {
 		if err := db.DeleteTask(id); err != nil {
-			writeError(w, err)
+			writeError(w, err, http.StatusNotFound)
 			return
 		}
 	} else {
 		next, err := NextDate(time.Now(), task.Date, task.Repeat)
 		if err != nil {
-			writeError(w, err)
+			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 		task.Date = next
 		if err := db.UpdateTask(task); err != nil {
-			writeError(w, err)
+			writeError(w, err, http.StatusNotFound)
 			return
 		}
 	}
@@ -132,11 +133,11 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	if id == "" {
-		writeError(w, errors.New("id is empty"))
+		writeError(w, errors.New("id is empty"), http.StatusBadRequest)
 		return
 	}
 	if err := db.DeleteTask(id); err != nil {
-		writeError(w, err)
+		writeError(w, err, http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
