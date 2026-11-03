@@ -68,7 +68,11 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeError(w, err, http.StatusNotFound)
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, err, http.StatusNotFound)
+			return
+		}
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -91,7 +95,11 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := db.UpdateTask(&task); err != nil {
-		writeError(w, err, http.StatusNotFound)
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, err, http.StatusNotFound)
+			return
+		}
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -106,12 +114,20 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeError(w, err, http.StatusNotFound)
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, err, http.StatusNotFound)
+			return
+		}
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	if task.Repeat == "" {
 		if err := db.DeleteTask(id); err != nil {
-			writeError(w, err, http.StatusNotFound)
+			if errors.Is(err, db.ErrNotFound) {
+				writeError(w, err, http.StatusNotFound)
+				return
+			}
+			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 	} else {
@@ -122,7 +138,11 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		task.Date = next
 		if err := db.UpdateTask(task); err != nil {
-			writeError(w, err, http.StatusNotFound)
+			if errors.Is(err, db.ErrNotFound) {
+				writeError(w, err, http.StatusNotFound)
+				return
+			}
+			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -137,7 +157,11 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := db.DeleteTask(id); err != nil {
-		writeError(w, err, http.StatusNotFound)
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, err, http.StatusNotFound)
+			return
+		}
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

@@ -15,6 +15,8 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
+var ErrNotFound = errors.New("task not found")
+
 func Tasks(limit int, search string) ([]Task, error) {
 	today := time.Now().Format("20060102")
 
@@ -61,6 +63,9 @@ func GetTask(id string) (*Task, error) {
 	err := DB.QueryRow(`SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`, id).
 		Scan(&id64, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	t.ID = strconv.FormatInt(id64, 10)
@@ -78,7 +83,7 @@ func UpdateTask(task *Task) error {
 		return err
 	}
 	if count == 0 {
-		return errors.New("task not found")
+		return ErrNotFound
 	}
 	return nil
 }
@@ -92,7 +97,7 @@ func DeleteTask(id string) error {
 		return err
 	}
 	if count == 0 {
-		return errors.New("task not found")
+		return ErrNotFound
 	}
 	return nil
 }
