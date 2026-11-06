@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS scheduler (
+id      INTEGER PRIMARY KEY AUTOINCREMENT,
+date TEXT NOT NULL,
+comment    TEXT NOT NULL DEFAULT '',
+title TEXT NOT NULL,
+repeat TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheduler_date ON scheduler(date);

@@ -1,0 +1,7 @@
+.git
+.idea
+tests
+docs
+todo-amd64
+*.md
+docker-data
