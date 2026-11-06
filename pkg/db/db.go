@@ -11,7 +11,6 @@ import (
 var schema string
 
 var DB *sql.DB
-var err error
 
 func Init(dbFile string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", dbFile)
@@ -26,13 +25,4 @@ func Init(dbFile string) (*sql.DB, error) {
 	}
 	DB = db
 	return db, nil
-}
-
-func AddTask(date, title, comment, repeat string) (int64, error) {
-	res, err := DB.Exec(`INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`,
-		date, title, comment, repeat)
-	if err != nil {
-		return 0, err
-	}
-	return res.LastInsertId()
 }

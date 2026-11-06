@@ -15,10 +15,12 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
+const DateLayout = "20060102"
+
 var ErrNotFound = errors.New("task not found")
 
 func Tasks(limit int, search string) ([]Task, error) {
-	today := time.Now().Format("20060102")
+	today := time.Now().Format(DateLayout)
 
 	var rows *sql.Rows
 	var err error
@@ -28,14 +30,11 @@ func Tasks(limit int, search string) ([]Task, error) {
 			WHERE date >= ? ORDER BY date LIMIT ?`, today, limit)
 	} else if t, e := time.Parse("02.01.2006", search); e == nil {
 		rows, err = DB.Query(`SELECT id, date, title, comment, repeat FROM scheduler
-			WHERE date = ? ORDER BY date LIMIT ?`, t.Format("20060102"), limit)
+			WHERE date = ? ORDER BY DATE LIMIT ?`, t.Format(DateLayout), limit)
 	} else {
 		pattern := "%" + search + "%"
 		rows, err = DB.Query(`SELECT id, date, title, comment, repeat FROM scheduler
 			WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`, pattern, pattern, limit)
-	}
-	if err != nil {
-		return nil, err
 	}
 	if err != nil {
 		return nil, err
@@ -100,4 +99,13 @@ func DeleteTask(id string) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+func AddTask(date, title, comment, repeat string) (int64, error) {
+	res, err := DB.Exec(`INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`,
+		date, title, comment, repeat)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
 }

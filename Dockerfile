@@ -10,5 +10,4 @@ WORKDIR /app
 COPY --from=build /src/todo /app/todo
 COPY web /app/web
 ENV TODO_PORT=7540
-EXPOSE 7540
 CMD ["/app/todo"]

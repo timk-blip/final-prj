@@ -1,0 +1,7 @@
+.env
+todo-arm64
+todo-amd64
+.idea/
+docker-data/
+*.log
+scheduler.db

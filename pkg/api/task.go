@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"final-prj/pkg/db"
+	"log"
 	"net/http"
 	"time"
 )
@@ -25,7 +26,9 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int64{"id": id})
+	if err := json.NewEncoder(w).Encode(map[string]int64{"id": id}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }
 
 func checkTask(task *db.Task) error {
@@ -58,7 +61,16 @@ func checkTask(task *db.Task) error {
 func writeError(w http.ResponseWriter, err error, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+	if err := json.NewEncoder(w).Encode(map[string]string{"error": err.Error()}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
+}
+func writeDBError(w http.ResponseWriter, err error) {
+	if errors.Is(err, db.ErrNotFound) {
+		writeError(w, err, http.StatusNotFound)
+		return
+	}
+	writeError(w, err, http.StatusInternalServerError)
 }
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
@@ -68,15 +80,13 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err := db.GetTask(id)
 	if err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			writeError(w, err, http.StatusNotFound)
-			return
-		}
-		writeError(w, err, http.StatusInternalServerError)
+		writeDBError(w, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task)
+	if err := json.NewEncoder(w).Encode(task); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }
 
 func putTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -95,15 +105,13 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := db.UpdateTask(&task); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			writeError(w, err, http.StatusNotFound)
-			return
-		}
-		writeError(w, err, http.StatusInternalServerError)
+		writeDBError(w, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(struct{}{})
+	if err := json.NewEncoder(w).Encode(struct{}{}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }
 
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -114,20 +122,12 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err := db.GetTask(id)
 	if err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			writeError(w, err, http.StatusNotFound)
-			return
-		}
-		writeError(w, err, http.StatusInternalServerError)
+		writeDBError(w, err)
 		return
 	}
 	if task.Repeat == "" {
 		if err := db.DeleteTask(id); err != nil {
-			if errors.Is(err, db.ErrNotFound) {
-				writeError(w, err, http.StatusNotFound)
-				return
-			}
-			writeError(w, err, http.StatusInternalServerError)
+			writeDBError(w, err)
 			return
 		}
 	} else {
@@ -138,16 +138,14 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		task.Date = next
 		if err := db.UpdateTask(task); err != nil {
-			if errors.Is(err, db.ErrNotFound) {
-				writeError(w, err, http.StatusNotFound)
-				return
-			}
-			writeError(w, err, http.StatusInternalServerError)
+			writeDBError(w, err)
 			return
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(struct{}{})
+	if err := json.NewEncoder(w).Encode(struct{}{}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }
 
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -157,13 +155,11 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := db.DeleteTask(id); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			writeError(w, err, http.StatusNotFound)
-			return
-		}
-		writeError(w, err, http.StatusInternalServerError)
+		writeDBError(w, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(struct{}{})
+	if err := json.NewEncoder(w).Encode(struct{}{}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }

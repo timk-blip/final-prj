@@ -5,14 +5,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var pass = os.Getenv("TODO_PASSWORD")
+
 func signinHandler(w http.ResponseWriter, r *http.Request) {
-	pass := os.Getenv("TODO_PASSWORD")
 	var input struct {
 		Password string `json:"password"`
 	}
@@ -36,12 +38,13 @@ func signinHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": signedToken})
+	if err := json.NewEncoder(w).Encode(map[string]string{"token": signedToken}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }
 
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pass := os.Getenv("TODO_PASSWORD")
 		if pass == "" {
 			next.ServeHTTP(w, r)
 			return
